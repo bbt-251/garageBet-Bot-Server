@@ -1,287 +1,111 @@
-# GarageBet Telegram Bot
+# 🏎️ GarageBet Telegram Bot Server
 
-A Telegram bot for GarageBet users to access the platform after phone verification.
+A robust Node.js and TypeScript-based Telegram bot server designed to streamline user authentication and provides seamless access to the **GarageBet** platform.
 
-## Overview
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=flat-square&logo=firebase&logoColor=black)](https://firebase.google.com/)
 
-This bot enables users to verify their account via phone number. Once verified, users can access the GarageBet web application directly within Telegram.
+---
 
-## Features
+## 🚀 Overview
 
-- **Phone Verification**: Verify account via phone number
-- **Easy Access**: One-click access to the GarageBet Web App
-- **Secure**: Links Telegram chat ID to verified accounts
+The GarageBet Telegram Bot serves as the bridge between Telegram and the GarageBet web application. It handles user identity verification via phone numbers and links Telegram identities to Firebase-backed user accounts, enabling a secure and frictionless entry point into the app.
 
-## Architecture
+## ✨ Features
 
-The bot integrates with Firebase/Firestore for user verification and data persistence.
-### Data Models
+- **🛡️ Secure Phone Verification**: Uses Telegram's native contact sharing to securely verify user phone numbers.
+- **🔗 Cross-Environment Account Linking**: Automatically searches for and links accounts across multiple Firebase project environments (Dev, Int, Prod, etc.).
+- **📱 Integrated Web App Access**: Provides a direct, one-tap button to launch the GarageBet Web App within Telegram's integrated browser.
+- **🔄 Fault-Tolerant Operations**: Built-in retry logic with exponential backoff for database operations to ensure reliability.
+- **🏥 Health Monitoring**: Dedicated health check endpoint for monitoring system status and Firebase connectivity.
 
-#### LoadRequest
-```typescript
-{
-  id: string;
-  displayID: string;
-  userId: string;
-  status: LoadRequestStatus;
-  route: {
-    origin: string;
-    destination: string;
-    routeVia?: string;
-  };
-  schedule: {
-    pickupDate: string;
-    deliveryDate: string;
-  };
-  contact: {
-    contactPerson: string;
-    phoneNumber: string;
-    customBranch?: string;
-    inspectionType?: string;
-  };
-  cargo: {
-    cargoType: string;
-    fragile: boolean;
-    hazardous: boolean;
-    temperatureControlled: boolean;
-    tempMin?: string;
-    tempMax?: string;
-    oversized: boolean;
-    stackable?: string;
-    description?: string;
-    packageGroups: LoadRequestPackageGroup[];
-  };
-  cargoTotals: {
-    totalUnits: number;
-    totalWeight: string;
-    totalVolume: string;
-  };
-  truckRequirements: {
-    truckBodyType: string;
-    axleConfiguration: string;
-    numberOfTrucks: string;
-    equipmentRequired: string[];
-    equipmentOtherDetails?: string;
-  };
-  carrierRequirements: {
-    carrierType?: string;
-    minimumRating: number;
-    preferredCarriersOnly: boolean;
-  };
-  biddingSettings: {
-    bidDeadline: string;
-    maxCarriers?: string;
-    bidVisibility: BidVisibility;
-    selectedCarriers: SelectedCarrier[];
-    selectedCarriersTrucks: Record<string, number>;
-    selectedCarriersCounterOfferEnabled: Record<string, boolean>;
-    selectedCarriersCounterOffers: Record<string, number>;
-    carrierBidVisibility: boolean;
-    autoAward: AutoAwardRule;
-    startingPrice?: string;
-    biddingType: BiddingType;
-    procurementMode: ProcurementMode;
-  };
-  paymentTerms: {
-    paymentMethod?: string;
-    paymentTerms?: string;
-    additionalIncentives?: string;
-    minBudget?: string;
-    maxBudget?: string;
-    insuranceRequired: boolean;
-  };
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-  transporterResponses?: Record<string, TransporterResponseStatus>;
-  negotiationHistory?: NegotiationEntry[];
-  telegramMessageId?: number;
-}
-```
+## 🛠️ Tech Stack
 
-#### Bid
-```typescript
-{
-  id: string;
-  loadRequestID: string;
-  transporterId: string;
-  transporterName: string;
-  transporterRating?: number;
-  status: BidStatus;
-  isWinner: boolean;
-  isAccepted: boolean;
-  pricing: {
-    amount: number;
-    currency: string;
-    includesInsurance: boolean;
-    includesFuel: boolean;
-    additionalCharges?: {
-      description: string;
-      amount: number;
-    }[];
-  };
-  trucksProvided: number;
-  proposedPickupDate?: string;
-  proposedDeliveryDate?: string;
-  truckDetails?: BidTruckDetails;
-  driverDetails?: BidDriverDetails;
-  notes?: string;
-  validUntil?: Timestamp;
-  offerHistory: OfferHistory[];
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
-```
+- **Language**: TypeScript
+- **Runtime**: Node.js
+- **Bot Framework**: `node-telegram-bot-api`
+- **Database**: Firebase Firestore (via Firebase Admin SDK)
+- **Networking**: Express (for health checks and optional webhooks)
 
-#### Transporter
-```typescript
-{
-  id: string;
-  uid: string;
-  name: string;
-  phoneNumber: string;
-  companyName?: string;
-  telegramChatID?: string;
-  status: 'Active' | 'Suspended' | 'Inactive';
-  createdAt: string;
-  updatedAt: string;
-}
-```
+## 📋 Prerequisites
 
-## Bot Commands
+- Node.js (v18 or higher recommended)
+- A Telegram Bot Token (obtained from [@BotFather](https://t.me/BotFather))
+- Firebase Service Account credentials for your environments.
 
-- `/start` - Verify phone number and link transporter account
-- `/help` - Show help message
+## ⚙️ Environment Variables
 
-## User Flow
-
-### Transporter Bid Placement Flow
-
-1. **Load Request Posted**: Cargo owner posts load request to @garagebet_bot channel
-2. **Click "Place Bid"**: Transporter clicks button on Telegram post
-3. **Phone Verification**: Bot verifies transporter's phone number
-4. **Enter Bid Amount**: Transporter enters bid amount in ETB
-5. **Enter Truck Count**: Transporter enters number of trucks available
-6. **Bid Confirmation**: Bot confirms successful bid submission
-
-### Phone Verification Flow
-
-1. Transporter sends `/start` command
-2. Bot requests phone number sharing
-3. Transporter shares phone number via Telegram
-4. Bot searches across all Firebase projects for matching transporter
-5. If found, links Telegram chat ID to transporter account
-6. Transporter can now place bids
-
-## Project Structure
-
-```
-src/
-├── bot.ts                      # Main bot implementation
-├── server.ts                    # Express server
-├── firebase-config.ts            # Firebase configuration
-├── webhook.ts                   # Webhook handlers
-├── models/                      # Data models
-│   ├── load-request.ts
-│   ├── bid.ts
-│   ├── transporter.ts
-│   └── user.ts
-├── services/                    # Business logic
-│   ├── bid-service.ts
-│   └── transporter-service.ts
-├── handlers/                    # Event handlers
-│   ├── callback-handler.ts        # Button click handlers
-│   └── message-handler.ts       # Message handlers
-└── types/                      # TypeScript types
-    └── telegram.ts
-```
-
-## Environment Variables
+Create a `.env` file in the root directory and configure the following variables:
 
 ```env
-TELEGRAM_BOT_TOKEN=your_bot_token_here
-NEXT_PUBLIC_FIREBASE_ADMIN_DEVELOPMENT='{"type":"service_account",...}'
-NEXT_PUBLIC_FIREBASE_ADMIN_DEV='{"type":"service_account",...}'
-NEXT_PUBLIC_FIREBASE_ADMIN_INT='{"type":"service_account",...}'
-# ... additional Firebase project configs
+# Telegram Configuration
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+
+# Firebase Configurations (JSON stringified Service Account)
+NEXT_PUBLIC_FIREBASE_ADMIN_GARAGEBET='{"type":"service_account", "project_id":"...", ...}'
+
+# Server Configuration
+PORT=3001
 ```
 
-## Installation
+> [!NOTE]
+> The server automatically scans for environment variables prefixed with `NEXT_PUBLIC_FIREBASE_ADMIN_` to initialize multiple Firebase database instances.
 
-```bash
-# Install dependencies
-npm install
+## 📦 Installation & Setup
 
-# Run in development
-npm run dev
+1. **Install Dependencies**:
+   ```bash
+   npm install
+   ```
 
-# Build for production
-npm run build
+2. **Run in Development**:
+   ```bash
+   npm run dev
+   ```
 
-# Start production server
-npm run start
+3. **Build for Production**:
+   ```bash
+   npm run build
+   ```
+
+4. **Start Production Server**:
+   ```bash
+   npm run start
+   ```
+
+## 📂 Project Structure
+
+```text
+src/
+├── bot.ts               # Core bot logic and command handlers
+├── server.ts            # Express server for health checks
+├── firebase-config.ts   # Multi-project Firebase initialization
+├── models/              # TypeScript interfaces for data
+│   └── user.ts          # User data model
+├── services/            # Business logic layer
+│   └── user-service.ts  # Database operations for user records
+└── types/               # Telegram-specific type definitions
 ```
 
-## Firebase Collections
+## 🔄 User Flow
 
-### `transporters`
-Stores transporter account information
-- Indexed by: `phoneNumber`, `telegramChatID`
+1. **Greeting**: User sends `/start` to the bot.
+2. **Identification**: Bot prompts the user to share their phone number via a "Share Contact" button.
+3. **Verification**: Bot cleans and normalizes the phone number, then searches for a matching user across the configured Firebase projects.
+4. **Linking**: If a match is found, the user's Telegram Chat ID is saved to their profile.
+5. **Access**: The bot provides a "Open GarageBet App" button that launches the web app.
 
-### `loadRequests`
-Stores cargo load requests
-- Indexed by: `cargoOwnerId`, `status`
+---
 
-### `bids`
-Stores bid information
-- Indexed by: `loadRequestId`, `transporterId`
+## 🛡️ Security
 
-## API Endpoints
+- **Restricted Access**: Users must share their own contact information; manual phone number input is not accepted to prevent spoofing.
+- **Data Privacy**: Only the necessary fields (UID, Phone, Chat ID) are utilized for verification.
 
-### GET `/health`
-Health check endpoint
-```json
-{
-  "status": "OK",
-  "timestamp": "2024-01-30T13:00:00.000Z",
-  "bot": {
-    "token": "Set",
-    "polling": "Always Enabled (Main Purpose)"
-  },
-  "firebase": {
-    "configs": 9
-  }
-}
-```
+## 🤝 Support
 
-### POST `/webhook`
-Webhook endpoint for Telegram updates (if needed)
+For technical assistance or inquiries, please contact the **Black Bridge Technologies** development team.
 
-## Security Considerations
-
-- Phone number verification required before placing bids
-- Transporter status checked (Active/Suspended/Inactive)
-- Duplicate bid prevention
-- Load request status validation
-- Firebase security rules should be configured appropriately
-
-## Error Handling
-
-The bot includes comprehensive error handling:
-- Database operation retries with exponential backoff
-- Health checks for Firebase connections
-- Graceful error messages to users
-- Performance monitoring for slow queries
-
-## Future Enhancements
-
-- Bid history viewing
-- Bid editing/cancellation
-- Real-time bid status notifications
-- Counter-offer handling
-- Analytics dashboard
-- Multi-language support
-
-## Support
-
-For issues or questions, please contact the development team.
+---
+© 2026 Black Bridge Technologies. All rights reserved.
