@@ -21,7 +21,7 @@ const firebaseConfig = {
         messagingSenderId: "271964121865",
         appId: "1:271964121865:web:7c9dae3e14792d1cb7c1d8",
         adminEnvKey: "NEXT_PUBLIC_FIREBASE_ADMIN_GARAGEBET",
-        domain: "https://garagebet-fa254.web.app"
+        domain: "https://garagebet-mini-app.vercel.app/"
     }
 }
 

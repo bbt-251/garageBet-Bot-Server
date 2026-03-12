@@ -1,12 +1,14 @@
 import TelegramBot from "node-telegram-bot-api";
+/*
 import {
     findUserByChatId,
     findUserByPhoneNumber,
     updateUserChatId,
 } from "./services/user-service";
+*/
 import { getExternalAppConfig } from "./firebase-config";
 import {
-    Contact,
+    // Contact,
     InlineKeyboardMarkup,
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
@@ -31,6 +33,14 @@ bot.onText(/\/start/, async (msg: TelegramMessage) => {
     const chatId = msg.chat.id;
     console.log(`🔔 RECEIVED /start command from chat ${chatId}`);
 
+    // For now, allow direct launch without phone verification
+    await sendMessage(
+        chatId,
+        `👋 Welcome to GarageBet!\n\nClick the button below to open the GarageBet app.`,
+        createAuthenticatedKeyboard()
+    );
+
+    /* 
     // Check if user is already verified
     const result = await findUserByChatId(chatId);
     if (result) {
@@ -42,16 +52,20 @@ bot.onText(/\/start/, async (msg: TelegramMessage) => {
     } else {
         await sendContactRequest(chatId);
     }
+    */
 });
 
 // Handle phone number sharing
+/*
 bot.on("message", async (msg: TelegramMessage) => {
     if (msg.contact) {
         await handleContactShare(msg.chat.id, msg.contact as Contact);
     }
 });
+*/
 
 // Keyboard for phone number request
+/*
 function createContactKeyboard(): ReplyKeyboardMarkup {
     return {
         keyboard: [[{ text: "📱 Share Phone Number", request_contact: true }]],
@@ -59,6 +73,7 @@ function createContactKeyboard(): ReplyKeyboardMarkup {
         one_time_keyboard: true,
     };
 }
+*/
 
 // Inline keyboard for authorized users
 function createAuthenticatedKeyboard(): InlineKeyboardMarkup {
@@ -75,6 +90,7 @@ function createAuthenticatedKeyboard(): InlineKeyboardMarkup {
     };
 }
 
+/*
 async function sendContactRequest(chatId: number) {
     const keyboard = createContactKeyboard();
     return sendMessage(
@@ -83,7 +99,9 @@ async function sendContactRequest(chatId: number) {
         keyboard
     );
 }
+*/
 
+/*
 async function handleContactShare(chatId: number, contact: Contact) {
     const phoneNumber = contact.phone_number;
     const cleanPhone = phoneNumber.replace(/[\s\-()]/g, "");
@@ -117,6 +135,7 @@ async function handleContactShare(chatId: number, contact: Contact) {
         await sendMessage(chatId, "❌ An error occurred. Please try again later.");
     }
 }
+*/
 
 async function sendMessage(
     chatId: number,
